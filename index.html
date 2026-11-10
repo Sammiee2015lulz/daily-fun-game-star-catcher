@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Star Catcher - Daily Fun Game</title>
+<style>
+body { margin:0; background:#0a0a1a; color:#fff; font-family:Arial,sans-serif; display:flex; flex-direction:column; align-items:center; }
+canvas { border:2px solid #4fc3f7; box-shadow:0 0 20px #4fc3f7; background:#000; }
+h1 { color:#4fc3f7; text-shadow:0 0 10px #4fc3f7; }
+#info { margin:10px; font-size:18px; }
+</style>
+</head>
+<body>
+<h1>🌟 Star Catcher 🌟</h1>
+<div id="info">Score: <span id="score">0</span> | Lives: <span id="lives">3</span> | Use ← → or A D to move</div>
+<canvas id="game" width="600" height="400"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+
+let score = 0;
+let lives = 3;
+let gameOver = false;
+let player = { x: 280, y: 350, w: 40, h: 30, speed: 7 };
+let stars = [];
+let asteroids = [];
+let keys = {};
+
+function spawnStar() {
+  stars.push({ x: Math.random()*560, y: -20, speed: 2 + Math.random()*3, size: 15 + Math.random()*10 });
+}
+function spawnAsteroid() {
+  asteroids.push({ x: Math.random()*560, y: -30, speed: 1.5 + Math.random()*2, size: 20 + Math.random()*15 });
+}
+
+setInterval(spawnStar, 800);
+setInterval(spawnAsteroid, 1500);
+
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+function update() {
+  if (gameOver) return;
+  if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+  if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+
+  stars.forEach((s, i) => {
+    s.y += s.speed;
+    if (s.y > canvas.height) stars.splice(i, 1);
+    if (s.x < player.x + player.w && s.x + s.size > player.x && s.y < player.y + player.h && s.y + s.size > player.y) {
+      score += 10;
+      scoreEl.textContent = score;
+      stars.splice(i, 1);
+    }
+  });
+
+  asteroids.forEach((a, i) => {
+    a.y += a.speed;
+    if (a.y > canvas.height) asteroids.splice(i, 1);
+    if (a.x < player.x + player.w && a.x + a.size > player.x && a.y < player.y + player.h && a.y + a.size > player.y) {
+      lives--;
+      livesEl.textContent = lives;
+      asteroids.splice(i, 1);
+      if (lives <= 0) gameOver = true;
+    }
+  });
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Player - spaceship
+  ctx.fillStyle = '#4fc3f7';
+  ctx.beginPath();
+  ctx.moveTo(player.x + player.w/2, player.y);
+  ctx.lineTo(player.x, player.y + player.h);
+  ctx.lineTo(player.x + player.w, player.y + player.h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Stars
+  stars.forEach(s => {
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath();
+    ctx.arc(s.x + s.size/2, s.y + s.size/2, s.size/2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+  });
+
+  // Asteroids
+  asteroids.forEach(a => {
+    ctx.fillStyle = '#f44336';
+    ctx.beginPath();
+    ctx.arc(a.x + a.size/2, a.y + a.size/2, a.size/2, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '40px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Game Over!', canvas.width/2, canvas.height/2);
+    ctx.font = '20px Arial';
+    ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 40);
+    ctx.fillText('Refresh to play again', canvas.width/2, canvas.height/2 + 70);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
